@@ -1,6 +1,12 @@
-import java.io.*;
+import java.io.BufferedReader;
+import java.io.BufferedWriter;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.io.OutputStreamWriter;
 import java.net.Socket;
 import java.util.concurrent.CopyOnWriteArrayList;
+
+import com.google.gson.Gson;
 
 public class ClientHandler implements Runnable {
     public Socket socket;
@@ -20,11 +26,13 @@ public class ClientHandler implements Runnable {
         String message;
         try {
             while ((message = reader.readLine()) != null) {
+                Gson gson = new Gson();
+                Message msg = gson.fromJson(message, Message.class);
                 for (ClientHandler c : clients) {
                     if (c == this) {
                         continue;
                     }
-                    c.sender.write(message);
+                    c.sender.write(msg.getContent());
                     c.sender.newLine();
                     c.sender.flush();
                 }
