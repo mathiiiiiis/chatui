@@ -18,7 +18,7 @@ public class Server {
 
         while (true) { 
             Socket client = serverSocket.accept();
-            ClientHandler clientHandler = new ClientHandler(client);
+            ClientHandler clientHandler = new ClientHandler(client, clients);
             System.out.println("✅ | Client connected");
             clients.add(clientHandler);
             new Thread(
