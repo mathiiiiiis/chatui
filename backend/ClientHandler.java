@@ -1,14 +1,14 @@
 import java.io.*;
 import java.net.Socket;
-import java.util.ArrayList;
+import java.util.concurrent.CopyOnWriteArrayList;
 
 public class ClientHandler implements Runnable {
     public Socket socket;
-    public ArrayList<ClientHandler> clients;
+    public CopyOnWriteArrayList<ClientHandler> clients;
     public BufferedReader reader;
     public BufferedWriter sender;
 
-    public ClientHandler (Socket client, ArrayList<ClientHandler> clients) throws IOException {
+    public ClientHandler (Socket client, CopyOnWriteArrayList<ClientHandler> clients) throws IOException {
         this.socket = client;
         this.clients = clients;
         reader = new BufferedReader(new InputStreamReader(client.getInputStream()));
@@ -31,6 +31,14 @@ public class ClientHandler implements Runnable {
             }
         } catch (IOException e) {
             System.out.println("Error: " + e);
+        } finally {
+            clients.remove(this);
+            try {
+                socket.close();
+            } catch (IOException e) {
+                System.out.println("Error: " + e);
+            }
+            System.out.println("⛔️ | Client disconnected");
         }
     }
 }

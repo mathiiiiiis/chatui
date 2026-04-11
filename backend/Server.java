@@ -1,15 +1,15 @@
 import java.io.*;
 import java.net.*;
-import java.util.ArrayList;
+import java.util.concurrent.CopyOnWriteArrayList;
 
 public class Server {
     private final int port;
-    public final ArrayList<ClientHandler> clients;
+    public final CopyOnWriteArrayList<ClientHandler> clients;
     private final ServerSocket serverSocket;
 
     public Server(int port, int backlog) throws IOException {
         this.port = port;
-        this.clients = new ArrayList<>();
+        this.clients = new CopyOnWriteArrayList<>();
         serverSocket = new ServerSocket(port, backlog);
     }
 
