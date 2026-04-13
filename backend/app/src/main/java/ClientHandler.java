@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
 import java.net.Socket;
+import java.util.HashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 
 import com.google.gson.Gson;
@@ -12,13 +13,15 @@ public class ClientHandler implements Runnable {
     public Socket socket;
     public Gson gson;
     public CopyOnWriteArrayList<ClientHandler> clients;
+    public final HashMap<String, Room> rooms;
     public BufferedReader reader;
     public BufferedWriter sender;
     public String username;
 
-    public ClientHandler (Socket client,CopyOnWriteArrayList<ClientHandler> clients) throws IOException {
+    public ClientHandler (Socket client, CopyOnWriteArrayList<ClientHandler> clients, HashMap<String, Room> rooms) throws IOException {
         this.socket = client;
         this.clients = clients;
+        this.rooms = rooms;
         reader = new BufferedReader(new InputStreamReader(client.getInputStream()));
         sender = new BufferedWriter(new OutputStreamWriter(client.getOutputStream()));
         gson = new Gson();
@@ -31,7 +34,7 @@ public class ClientHandler implements Runnable {
             username = msg.getContent();
             if (username != null) {
                 System.out.println("New user: " + username);
-                sender.write(gson.toJson(new Message("register" ,"Welcome, " + username + " you may now send messages", null)));
+                sender.write(gson.toJson(new Message("register", "Welcome, " + username, null)));
                 sender.newLine();
                 sender.flush();
             } else {
@@ -40,6 +43,24 @@ public class ClientHandler implements Runnable {
         } else {
             throw new IOException("Expected register, got: " + msg.getType());
         }
+    }
+
+    public void joinOrCreateRoom(String roomName) throws IOException {
+        String responseText;
+
+        if (rooms.containsKey(roomName)) {
+            responseText = "You joined" + roomName;
+        } else {
+            rooms.put(roomName, new Room(roomName));
+            System.out.println(username + " created " + roomName);
+            responseText = "You created and joined " + roomName;
+        }
+
+        rooms.get(roomName).getClients().add(this);
+        System.out.println(username + " joined " + roomName);
+        sender.write(gson.toJson(new Message("join", responseText + roomName, null)));
+        sender.newLine();
+        sender.flush();
     }
 
     public void streamReadMessages() throws IOException {
