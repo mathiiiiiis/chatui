@@ -10,34 +10,60 @@ import com.google.gson.Gson;
 
 public class ClientHandler implements Runnable {
     public Socket socket;
+    public Gson gson;
     public CopyOnWriteArrayList<ClientHandler> clients;
     public BufferedReader reader;
     public BufferedWriter sender;
+    public String username;
 
-    public ClientHandler (Socket client, CopyOnWriteArrayList<ClientHandler> clients) throws IOException {
+    public ClientHandler (Socket client,CopyOnWriteArrayList<ClientHandler> clients) throws IOException {
         this.socket = client;
         this.clients = clients;
         reader = new BufferedReader(new InputStreamReader(client.getInputStream()));
         sender = new BufferedWriter(new OutputStreamWriter(client.getOutputStream()));
+        gson = new Gson();
+    }
+
+    public void register() throws IOException {
+        String line = reader.readLine();
+        Message msg = gson.fromJson(line, Message.class);
+        if (msg.getType().equals("register")) {
+            username = msg.getContent();
+            if (username != null) {
+                System.out.println("New user: " + username);
+                sender.write(gson.toJson(new Message("register" ,"Welcome, " + username + " you may now send messages", null)));
+                sender.newLine();
+                sender.flush();
+            } else {
+                throw new IOException("Error: " + username + " is not a valid username");
+            }
+        } else {
+            throw new IOException("Expected register, got: " + msg.getType());
+        }
+    }
+
+    public void streamReadMessages() throws IOException {
+        String message;
+        while ((message = reader.readLine()) != null) {
+            Message msg = gson.fromJson(message, Message.class);
+            Message outgoing = new Message(msg.getType(), msg.getContent(), username);
+            for (ClientHandler c : clients) {
+                if (c == this) {
+                    continue;
+                }
+                c.sender.write(gson.toJson(outgoing));
+                System.out.println("New message: " + gson.toJson(outgoing));
+                c.sender.newLine();
+                c.sender.flush();
+            }
+        }
     }
 
     @Override
     public void run() {
-        String message;
         try {
-            while ((message = reader.readLine()) != null) {
-                Gson gson = new Gson();
-                Message msg = gson.fromJson(message, Message.class);
-                for (ClientHandler c : clients) {
-                    if (c == this) {
-                        continue;
-                    }
-                    c.sender.write(gson.toJson(msg));
-                    System.out.println("New message: " + msg.getContent());
-                    c.sender.newLine();
-                    c.sender.flush();
-                }
-            }
+            register();
+            streamReadMessages();
         } catch (IOException e) {
             System.out.println("Error: " + e);
         } finally {

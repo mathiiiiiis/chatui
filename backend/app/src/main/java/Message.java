@@ -1,11 +1,13 @@
 public class Message {
     private final String type;
     private final String content;
-    //private String user, room; for later use
+    private final String user;
+    //private final String room;
 
-    public Message(String type, String content) {
+    public Message(String type, String content, String user) {
         this.type = type;
         this.content = content;
+        this.user = user;
     }
 
     public String getType() {
@@ -14,5 +16,9 @@ public class Message {
 
     public String getContent() {
         return content;
+    }
+
+    public String getUser() {
+        return user;
     }
 }
