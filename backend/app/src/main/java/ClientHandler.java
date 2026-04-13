@@ -32,7 +32,8 @@ public class ClientHandler implements Runnable {
                     if (c == this) {
                         continue;
                     }
-                    c.sender.write(msg.getContent());
+                    c.sender.write(gson.toJson(msg));
+                    System.out.println("New message: " + msg.getContent());
                     c.sender.newLine();
                     c.sender.flush();
                 }
