@@ -74,7 +74,7 @@ public class ClientHandler implements Runnable {
                 joinOrCreateRoom(msg.getContent());
             } else {                
                 if (currentRoom == null) {
-                    sender.write("Failed to send message: Please join a room before sending a message." );
+                    sender.write(gson.toJson(new ErrorModel("error.room", "No Room joined", "Please join a room before sending a message.", 2)));
                     sender.newLine();
                     sender.flush();
                     continue;
@@ -90,7 +90,7 @@ public class ClientHandler implements Runnable {
                         c.sender.flush();
                     }
                 } else {
-                    sender.write("Failed to send message to room: " + currentRoom + ", does it still exist?");
+                    sender.write(gson.toJson(new ErrorModel("error.message", "Error while sending message", "Failed to send message to room: " + currentRoom + ", does it still exist?", 2)));
                     System.out.println(username + "'s message failed to send to room: " + currentRoom);
                     sender.newLine();
                     sender.flush();
