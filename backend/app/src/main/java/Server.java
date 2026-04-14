@@ -7,7 +7,7 @@ import java.util.concurrent.CopyOnWriteArrayList;
 public class Server {
     private final int port;
     public final CopyOnWriteArrayList<ClientHandler> clients;
-    public final HashMap<String, Room> rooms;
+    public final HashMap<String, RoomModel> rooms;
     private final ServerSocket serverSocket;
 
     public Server(int port, int backlog) throws IOException {
