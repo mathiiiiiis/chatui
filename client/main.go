@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"net"
 	"os"
+	"strings"
 
 	"chatui/client/models"
 )
@@ -24,10 +25,10 @@ func main()  {
 	fmt.Println("Enter username: ")
 	scanner := bufio.NewScanner(os.Stdin)
 	scanner.Scan()
-	input := scanner.Text()
+	user := scanner.Text()
 	msg := models.Message{
 		Type: "register",
-		Content: input,
+		Content: user,
 	}
 	data, err := json.Marshal(msg)
 	fmt.Fprintln(conn, string(data))
@@ -39,7 +40,9 @@ func main()  {
 
 	for scanner.Scan() {
 		input := scanner.Text()
-		fmt.Fprintln(conn, string(input))
+		msg := inputParser(input, user)
+		data, _ := json.Marshal(msg)
+		fmt.Println(conn, string(data))
 	}
 }
 
@@ -50,4 +53,29 @@ func eventListener(conn net.Conn) {
 		line := scanner.Text()
 		fmt.Println(line)
 	}
+}
+
+//takes plain input and transforms into JSON
+func inputParser(input string, user string) models.Message {
+	var msg models.Message
+
+	if strings.HasPrefix(input, "/join") {
+		parts := strings.Split(input, " ")
+		msg = models.Message{
+			Type: "room.join",
+			Content: parts[1],
+			User: user,
+		}
+	} else if strings.HasPrefix(input, "/leave") {
+		msg = models.Message{
+			Type: "room.leave",
+		}
+	} else {
+		msg = models.Message{
+			Type: "message",
+			Content: input,
+			User: user,
+		}
+	}
+	return msg
 }
