@@ -1,0 +1,13 @@
+tasks:
+  dev:server:
+    desc: start backend
+    run:
+      - cmd: gradle clean run
+        dir: ./backend
+
+  dev:client:
+    desc: start client
+    run:
+      - cmd: go run main.go
+        dir: ./client
+        
