@@ -1,11 +1,11 @@
 import java.util.ArrayList;
 
-public class Room {
+public class RoomModel {
     private final String name;
-    private final ArrayList<Message> messages;
+    private final ArrayList<MessageModel> messages;
     private final ArrayList<ClientHandler> clients;
 
-    public Room(String name) {
+    public RoomModel(String name) {
         this.name = name;
         this.messages = new ArrayList<>();
         this.clients = new ArrayList<>();
@@ -15,7 +15,7 @@ public class Room {
         return name;
     }
 
-    public ArrayList<Message> getMessages() {
+    public ArrayList<MessageModel> getMessages() {
         return messages;
     }
 

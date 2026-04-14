@@ -13,13 +13,13 @@ public class ClientHandler implements Runnable {
     public Socket socket;
     public Gson gson;
     public CopyOnWriteArrayList<ClientHandler> clients;
-    public final HashMap<String, Room> rooms;
+    public final HashMap<String, RoomModel> rooms;
     public BufferedReader reader;
     public BufferedWriter sender;
     public String username;
     public String currentRoom;
 
-    public ClientHandler (Socket client, CopyOnWriteArrayList<ClientHandler> clients, HashMap<String, Room> rooms) throws IOException {
+    public ClientHandler (Socket client, CopyOnWriteArrayList<ClientHandler> clients, HashMap<String, RoomModel> rooms) throws IOException {
         this.socket = client;
         this.clients = clients;
         this.rooms = rooms;
@@ -30,12 +30,12 @@ public class ClientHandler implements Runnable {
 
     public void register() throws IOException {
         String line = reader.readLine();
-        Message msg = gson.fromJson(line, Message.class);
+        MessageModel msg = gson.fromJson(line, MessageModel.class);
         if (msg.getType().equals("register")) {
             username = msg.getContent();
             if (username != null) {
                 System.out.println("New user: " + username);
-                sender.write(gson.toJson(new Message("register", "Welcome, " + username, null)));
+                sender.write(gson.toJson(new MessageModel("register", "Welcome, " + username, null)));
                 sender.newLine();
                 sender.flush();
             } else {
@@ -52,7 +52,7 @@ public class ClientHandler implements Runnable {
         if (rooms.containsKey(roomName)) {
             responseText = "You joined ";
         } else {
-            rooms.put(roomName, new Room(roomName));
+            rooms.put(roomName, new RoomModel(roomName));
             System.out.println(username + " created " + roomName);
             responseText = "You created and joined ";
         }
@@ -60,7 +60,7 @@ public class ClientHandler implements Runnable {
         rooms.get(roomName).getClients().add(this);
         currentRoom = roomName;
         System.out.println(username + " joined " + roomName);
-        sender.write(gson.toJson(new Message("join", responseText + roomName, null)));
+        sender.write(gson.toJson(new MessageModel("join", responseText + roomName, null)));
         sender.newLine();
         sender.flush();
     }
@@ -68,8 +68,8 @@ public class ClientHandler implements Runnable {
     public void streamReadMessages() throws IOException {
         String message;
         while ((message = reader.readLine()) != null) {
-            Message msg = gson.fromJson(message, Message.class);
-            Message outgoing = new Message(msg.getType(), msg.getContent(), username);
+            MessageModel msg = gson.fromJson(message, MessageModel.class);
+            MessageModel outgoing = new MessageModel(msg.getType(), msg.getContent(), username);
             if (msg.getType().equals("room.join")) {
                 joinOrCreateRoom(msg.getContent());
             } else {                
