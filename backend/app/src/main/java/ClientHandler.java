@@ -17,6 +17,7 @@ public class ClientHandler implements Runnable {
     public BufferedReader reader;
     public BufferedWriter sender;
     public String username;
+    public String currentRoom;
 
     public ClientHandler (Socket client, CopyOnWriteArrayList<ClientHandler> clients, HashMap<String, Room> rooms) throws IOException {
         this.socket = client;
@@ -49,14 +50,15 @@ public class ClientHandler implements Runnable {
         String responseText;
 
         if (rooms.containsKey(roomName)) {
-            responseText = "You joined" + roomName;
+            responseText = "You joined ";
         } else {
             rooms.put(roomName, new Room(roomName));
             System.out.println(username + " created " + roomName);
-            responseText = "You created and joined " + roomName;
+            responseText = "You created and joined ";
         }
 
         rooms.get(roomName).getClients().add(this);
+        currentRoom = roomName;
         System.out.println(username + " joined " + roomName);
         sender.write(gson.toJson(new Message("join", responseText + roomName, null)));
         sender.newLine();
@@ -68,14 +70,31 @@ public class ClientHandler implements Runnable {
         while ((message = reader.readLine()) != null) {
             Message msg = gson.fromJson(message, Message.class);
             Message outgoing = new Message(msg.getType(), msg.getContent(), username);
-            for (ClientHandler c : clients) {
-                if (c == this) {
+            if (msg.getType().equals("room.join")) {
+                joinOrCreateRoom(msg.getContent());
+            } else {                
+                if (currentRoom == null) {
+                    sender.write("Failed to send message: Please join a room before sending a message." );
+                    sender.newLine();
+                    sender.flush();
                     continue;
                 }
-                c.sender.write(gson.toJson(outgoing));
-                System.out.println("New message: " + gson.toJson(outgoing));
-                c.sender.newLine();
-                c.sender.flush();
+                if (msg.getType().equals("room.message")) {
+                    for (ClientHandler c : rooms.get(currentRoom).getClients()) {
+                        if (c == this) {
+                            continue;
+                        }
+                        c.sender.write(gson.toJson(outgoing));
+                        System.out.println("New message: " + gson.toJson(outgoing));
+                        c.sender.newLine();
+                        c.sender.flush();
+                    }
+                } else {
+                    sender.write("Failed to send message to room: " + currentRoom + ", does it still exist?");
+                    System.out.println(username + "'s message failed to send to room: " + currentRoom);
+                    sender.newLine();
+                    sender.flush();
+                }
             }
         }
     }
