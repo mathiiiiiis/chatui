@@ -36,21 +36,23 @@ func main()  {
 	line, err := reader.ReadString('\n')
 	fmt.Println(line)
 
-	go eventListener(conn)
+	go eventListener(reader)
 
 	for scanner.Scan() {
 		input := scanner.Text()
 		msg := inputParser(input, user)
 		data, _ := json.Marshal(msg)
-		fmt.Println(conn, string(data))
+		fmt.Fprintln(conn, string(data))
 	}
 }
 
 //listens for messages from the server
-func eventListener(conn net.Conn) {
-	scanner := bufio.NewScanner(conn)
-	for scanner.Scan() {
-		line := scanner.Text()
+func eventListener(reader *bufio.Reader) {
+	for {
+		line, err := reader.ReadString('\n')
+		if err != nil {
+			return
+		}
 		fmt.Println(line)
 	}
 }
@@ -72,7 +74,7 @@ func inputParser(input string, user string) models.Message {
 		}
 	} else {
 		msg = models.Message{
-			Type: "message",
+			Type: "room.message",
 			Content: input,
 			User: user,
 		}
